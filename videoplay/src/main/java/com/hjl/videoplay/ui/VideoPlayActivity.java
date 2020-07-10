@@ -107,6 +107,17 @@ public class VideoPlayActivity extends AppCompatActivity implements View.OnClick
         initMediaPalyer();
         initSurfaceviewStateListener();
 
+        mLlContent.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(mLlBottom.getVisibility() == View.VISIBLE){
+                    mLlBottom.setVisibility(View.GONE);
+                }else {
+                    mLlBottom.setVisibility(View.VISIBLE);
+                }
+            }
+        });
+
         mClose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -278,6 +289,16 @@ public class VideoPlayActivity extends AppCompatActivity implements View.OnClick
                     startPlay();
                 }
             });
+            mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mediaPlayer) {
+                    Log.d("tag", "播放完毕");
+                     //根据需要bai添加自己的代码。du。。
+                    mStartAndStop.setImageResource(R.drawable.ic_start);
+
+                }
+            });
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -333,10 +354,16 @@ public class VideoPlayActivity extends AppCompatActivity implements View.OnClick
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case 1:
+                    if (mMediaPlayer.getCurrentPosition() == mMediaPlayer.getDuration()) {
+                        mStartAndStop.setImageResource(R.drawable.ic_start);
+                        return;
+                    }
+                    mStartAndStop.setImageResource(R.drawable.ic_stop);
                     mSeekBar.setProgress(mMediaPlayer.getCurrentPosition());
                     mCurrentTime.setText(time(mMediaPlayer.getCurrentPosition()));
 
                     break;
+
             }
         }
     };
@@ -355,11 +382,7 @@ public class VideoPlayActivity extends AppCompatActivity implements View.OnClick
         public void run() {
             while (mMediaPlayer != null && mMediaPlayer.isPlaying()) {
 
-                if (mMediaPlayer.getCurrentPosition() == mMediaPlayer.getDuration()) {
-                    mStartAndStop.setImageResource(R.drawable.ic_start);
-                    return;
-                }
-                mStartAndStop.setImageResource(R.drawable.ic_stop);
+
                 Message message = new Message();
                 message.what = 1;
                 myHandler.sendMessage(message);
@@ -368,7 +391,6 @@ public class VideoPlayActivity extends AppCompatActivity implements View.OnClick
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
-
 
             }
         }

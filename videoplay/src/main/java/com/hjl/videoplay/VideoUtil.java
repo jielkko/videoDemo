@@ -16,6 +16,7 @@ import com.hjl.videoplay.ui.VideoPlayActivity;
 
 public class VideoUtil {
 
+    private static int VIDEO = 66;
 
 
     public static void show(Activity mActivity, View v, String videoPath){
@@ -25,4 +26,23 @@ public class VideoUtil {
                 makeSceneTransitionAnimation(mActivity, v, "");
         mActivity.startActivity(intent, options.toBundle());
     }
+
+
+
+    /**
+     * 从相册中选择视频
+     */
+    public static void choiceVideo(Activity mActivity) {
+        Intent intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Video.Media.EXTERNAL_CONTENT_URI);
+        //intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Video.Media.EXTERNAL_CONTENT_URI);
+
+        //intent = new Intent(Intent.ACTION_GET_CONTENT);
+        //comma-separated MIME types
+        //intent.setType("video/*, image/*");
+        intent.setType("video/*");
+        mActivity.startActivityForResult(intent, VIDEO);
+    }
+
+
+    
 }
