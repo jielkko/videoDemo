@@ -7,10 +7,12 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityOptionsCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Gravity;
@@ -21,17 +23,20 @@ import android.widget.Toast;
 import com.hjl.videoplay.VideoUtil;
 import com.hjl.videoplay.ui.VideoPlayActivity;
 
+import java.io.File;
 import java.util.List;
+import java.util.UUID;
 
 import pub.devrel.easypermissions.AppSettingsDialog;
 import pub.devrel.easypermissions.EasyPermissions;
 
 
-public class MainActivity extends AppCompatActivity implements  EasyPermissions.PermissionCallbacks {
+public class MainActivity extends AppCompatActivity implements EasyPermissions.PermissionCallbacks {
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private Button mBtnSelectVideo;
     private Button mBtnVideo;
+    private Button mBtnPai;
 
 
     private String videoPath = "";
@@ -43,6 +48,7 @@ public class MainActivity extends AppCompatActivity implements  EasyPermissions.
 
         mBtnSelectVideo = (Button) findViewById(R.id.btn_select_video);
         mBtnVideo = (Button) findViewById(R.id.btn_video);
+        mBtnPai = (Button) findViewById(R.id.btn_pai);
 
         mBtnSelectVideo.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -53,7 +59,7 @@ public class MainActivity extends AppCompatActivity implements  EasyPermissions.
         mBtnVideo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if("".equals(videoPath)){
+                if ("".equals(videoPath)) {
                     Toast toast = Toast.makeText(MainActivity.this, "请选择视频", Toast.LENGTH_SHORT);
                     toast.setGravity(Gravity.CENTER, 0, 0);
                     toast.show();
@@ -68,20 +74,51 @@ public class MainActivity extends AppCompatActivity implements  EasyPermissions.
                         makeSceneTransitionAnimation(MainActivity.this, v, getString(R.string.transition_test));
                 startActivity(intent, options.toBundle());*/
 
-                VideoUtil.show(MainActivity.this, v,videoPath);
+                VideoUtil.show(MainActivity.this, v, videoPath);
             }
         });
 
 
+        mBtnPai.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //luVideo();
+                VideoUtil.taskVideo(MainActivity.this);
 
+            }
+        });
 
         initPermission();
     }
 
 
-    private void initData(){
+    private void initData() {
 
     }
+
+
+    private void luVideo(){
+        Intent intent = new Intent();
+        intent.setAction("android.media.action.VIDEO_CAPTURE");
+        intent.addCategory("android.intent.category.DEFAULT");
+        String FILE_PATH = Environment.getExternalStorageDirectory().getPath() + "/DCIM/Camera/";
+        File file = new File(FILE_PATH);
+        if (file.exists()) {
+            file.delete();
+        }
+        Uri uri = Uri.fromFile(file);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            uri = FileProvider.getUriForFile(
+                    this,
+                    getPackageName() + ".fileprovider",
+                    file);
+        }
+
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
+        startActivityForResult(intent, 77);
+    }
+
 
     /**
      * 从相册中选择视频
@@ -96,8 +133,6 @@ public class MainActivity extends AppCompatActivity implements  EasyPermissions.
         intent.setType("video/*");
         startActivityForResult(intent, 66);
     }
-
-
 
 
     @Override
@@ -120,6 +155,21 @@ public class MainActivity extends AppCompatActivity implements  EasyPermissions.
         if (resultCode != Activity.RESULT_OK) {
             return;
         }
+        if (requestCode == 77 && resultCode == RESULT_OK && null != data) {
+            Log.i(TAG, "拍摄完成，resultCode="+requestCode);
+            Uri selectedVideo = data.getData();
+            String[] filePathColumn = {MediaStore.Video.Media.DATA};
+
+            Cursor cursor = getContentResolver().query(selectedVideo,
+                    filePathColumn, null, null, null);
+            cursor.moveToFirst();
+
+            int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+            videoPath = cursor.getString(columnIndex);
+            cursor.close();
+            Log.d("首页", "videoPath: " + videoPath);
+        }
+
     }
 
     private static final int RC_CAMERA_AND_LOCATION = 40001;
