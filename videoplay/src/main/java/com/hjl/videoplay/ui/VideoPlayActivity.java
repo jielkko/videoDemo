@@ -9,6 +9,7 @@ import android.media.MediaPlayer;
 import android.media.ThumbnailUtils;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Message;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
@@ -138,7 +139,8 @@ public class VideoPlayActivity extends AppCompatActivity implements View.OnClick
 
             @Override
             public void onDragging(float percent) {
-
+                Log.d(TAG, "onDragging: 滑动中");
+                pausePlay();
             }
 
             @Override
@@ -309,14 +311,23 @@ public class VideoPlayActivity extends AppCompatActivity implements View.OnClick
             mMediaPlayer.start();
             mSeekBar.setMax(mMediaPlayer.getDuration());
             mSumTime.setText(time(mMediaPlayer.getDuration()));
-            VideoThreed mVideoThreed = new VideoThreed();
-            mVideoThreed.start();
+
+
+            HandlerThread thread = new HandlerThread("MyHandlerThread");
+            thread.start();//创建一个HandlerThread并启动它
+            mHandler = new Handler(thread.getLooper());//使用HandlerThread的looper对象创建Handler，如果使用默认的构造方法，很有可能阻塞UI线程
+            mHandler.post(mBackgroundRunnable);//将线程post到Handler中
+
             mStartAndStop.setImageResource(R.drawable.ic_stop);
         }
     }
 
     private void stopPlay() {
         if (mMediaPlayer.isPlaying()) {
+            //销毁线程
+            if (mHandler!=null){
+                mHandler.removeCallbacks(mBackgroundRunnable);
+            }
             mMediaPlayer.stop();
             mStartAndStop.setImageResource(R.drawable.ic_start);
         }
@@ -324,6 +335,10 @@ public class VideoPlayActivity extends AppCompatActivity implements View.OnClick
 
     private void pausePlay() {
         if (mMediaPlayer.isPlaying()) {
+            //销毁线程
+            if (mHandler!=null){
+                mHandler.removeCallbacks(mBackgroundRunnable);
+            }
             mMediaPlayer.pause();
             mStartAndStop.setImageResource(R.drawable.ic_start);
 
@@ -345,6 +360,11 @@ public class VideoPlayActivity extends AppCompatActivity implements View.OnClick
             mMediaPlayer = null;
 
         }
+        //销毁线程
+        if (mHandler!=null){
+            mHandler.removeCallbacks(mBackgroundRunnable);
+        }
+
     }
 
 
@@ -376,10 +396,16 @@ public class VideoPlayActivity extends AppCompatActivity implements View.OnClick
         return simpleDateFormat.format(c.getTime());
     }
 
-    //视频进度条更新
-    class VideoThreed extends Thread {
+
+    private Handler mHandler;
+
+
+    //实现耗时操作的线程
+    Runnable mBackgroundRunnable = new Runnable() {
+
         @Override
         public void run() {
+            //----------模拟耗时的操作，开始---------------
             while (mMediaPlayer != null && mMediaPlayer.isPlaying()) {
 
 
@@ -393,8 +419,10 @@ public class VideoPlayActivity extends AppCompatActivity implements View.OnClick
                 }
 
             }
+            //----------模拟耗时的操作，结束---------------
         }
-    }
+    };
+
 
     private SeekBar.OnSeekBarChangeListener onSeekBarChangeListener = new SeekBar.OnSeekBarChangeListener() {
         // 当进度条停止修改的时候触发
@@ -422,7 +450,7 @@ public class VideoPlayActivity extends AppCompatActivity implements View.OnClick
     };
 
 
-    private Bitmap firstFrame;
+ /*   private Bitmap firstFrame;
 
 
     private Handler mHandler = new Handler() {
@@ -433,6 +461,6 @@ public class VideoPlayActivity extends AppCompatActivity implements View.OnClick
             mIvFirstFrame.setImageBitmap(firstFrame);
         }
     };
-
+*/
 
 }
