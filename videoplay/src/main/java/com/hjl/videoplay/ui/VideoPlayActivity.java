@@ -440,6 +440,9 @@ public class VideoPlayActivity extends AppCompatActivity implements View.OnClick
         @Override
         public void onStartTrackingTouch(SeekBar seekBar) {
 
+            if (mMediaPlayer != null) {
+                pausePlay();
+            }
         }
 
         @Override
